@@ -2,10 +2,9 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Python and pipx for Checkov and other tools
+# Install Python and pip for scripting and automation
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip curl unzip && \
-    pip install --user pipx && pipx ensurepath && pipx install checkov
+    apt-get install -y python3 python3-pip curl unzip
 
 # Install kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \

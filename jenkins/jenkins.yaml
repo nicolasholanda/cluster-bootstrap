@@ -6,7 +6,8 @@ credentials:
               scope: GLOBAL
               id: "jenkins-kubeconfig"
               description: "Kubeconfig for Jenkins bootstrap admin"
-              file: "/var/jenkins_home/jenkins-bootstrap-admin.kubeconfig"
+              fileName: "jenkins-bootstrap-admin.kubeconfig"
+              secretBytes: "${readFileBase64:/var/jenkins_home/jenkins-bootstrap-admin.kubeconfig}"
 jobs:
   - script: |
       pipelineJob('bootstrap-cluster') {
