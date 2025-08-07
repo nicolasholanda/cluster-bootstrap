@@ -1,0 +1,14 @@
+workflow-aggregator
+workflow-cps
+workflow-job
+workflow-multibranch
+workflow-basic-steps
+pipeline-stage-view
+git
+credentials
+kubernetes-cli
+job-dsl
+configuration-as-code
+docker-plugin
+blueocean
+
