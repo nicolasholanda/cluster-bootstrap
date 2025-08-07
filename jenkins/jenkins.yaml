@@ -25,6 +25,7 @@ jobs:
           }
         }
         description('Bootstraps the Kubernetes cluster using OpenTofu')
+      }
 jenkins:
   securityRealm:
     local:
@@ -35,4 +36,3 @@ jenkins:
   authorizationStrategy:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
-  disableSetupWizard: true

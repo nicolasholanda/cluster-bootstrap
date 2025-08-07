@@ -10,3 +10,4 @@ services:
       - ../k8s-resources/jenkins-bootstrap-admin.kubeconfig:/var/jenkins_home/jenkins-bootstrap-admin.kubeconfig:ro
     environment:
       - CASC_JENKINS_CONFIG=/var/jenkins_home/jenkins.yaml
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
