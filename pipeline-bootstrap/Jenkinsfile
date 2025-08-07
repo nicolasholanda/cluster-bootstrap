@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    environment {
+        KUBECONFIG_CREDS_ID = 'jenkins-kubeconfig'
+        TOFU_DIR = '../k8s-resources'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Bootstrap Cluster with Tofu') {
+            steps {
+                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
+                    sh '''
+                        cd ${TOFU_DIR}
+                        tofu init || true
+                        tofu apply -auto-approve -var="kubeconfig_path=$KUBECONFIG_PATH"
+                    '''
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo "Bootstrap pipeline finished"
+        }
+        success {
+            echo "Cluster bootstrapped successfully"
+        }
+        failure {
+            echo "Bootstrap failed. Check logs for details."
+        }
+    }
+}
+

@@ -7,3 +7,31 @@ credentials:
               id: "jenkins-kubeconfig"
               description: "Kubeconfig for Jenkins bootstrap admin"
               file: "/var/jenkins_home/jenkins-bootstrap-admin.kubeconfig"
+jobs:
+  - script: |
+      pipelineJob('bootstrap-cluster') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/nicolasholanda/cluster-bootstrap.git')
+                }
+                branch('main')
+              }
+            }
+            scriptPath('pipeline-bootstrap/Jenkinsfile')
+          }
+        }
+        description('Bootstraps the Kubernetes cluster using OpenTofu')
+jenkins:
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  disableSetupWizard: true
