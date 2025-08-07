@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         KUBECONFIG_CREDS_ID = 'jenkins-kubeconfig'
-        TOFU_DIR = '../k8s-resources'
+        TOFU_DIR = 'pipeline-bootstrap/tofu'
     }
     stages {
         stage('Checkout') {
