@@ -1,0 +1,9 @@
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - file:
+              scope: GLOBAL
+              id: "jenkins-kubeconfig"
+              description: "Kubeconfig for Jenkins bootstrap admin"
+              file: "/var/jenkins_home/jenkins-bootstrap-admin.kubeconfig"
