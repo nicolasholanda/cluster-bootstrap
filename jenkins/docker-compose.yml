@@ -3,11 +3,11 @@ services:
   jenkins:
     build: .
     container_name: bootstrap-jenkins
-    ports:
-      - "8081:8080"
+    network_mode: host
     volumes:
       - ./jenkins.yaml:/var/jenkins_home/jenkins.yaml:ro
       - ../k8s-resources/jenkins-bootstrap-admin.kubeconfig:/var/jenkins_home/jenkins-bootstrap-admin.kubeconfig:ro
     environment:
       - CASC_JENKINS_CONFIG=/var/jenkins_home/jenkins.yaml
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - JENKINS_OPTS=--httpPort=8081

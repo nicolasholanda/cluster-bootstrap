@@ -34,7 +34,7 @@ resource "kubernetes_deployment" "jenkins" {
       spec {
         container {
           name  = "jenkins"
-          image = "jenkins/jenkins@sha256:b1b1d3b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1"
+          image = "jenkins/jenkins:lts"
           image_pull_policy = "Always"
           port {
             container_port = 8080
@@ -45,23 +45,33 @@ resource "kubernetes_deployment" "jenkins" {
             capabilities {
               drop = ["ALL"]
             }
-            read_only_root_filesystem = false
+            read_only_root_filesystem = true
+          }
+          volume_mount {
+            name       = "jenkins-home"
+            mount_path = "/var/jenkins_home"
+          }
+          volume_mount {
+            name       = "tmp"
+            mount_path = "/tmp"
           }
           liveness_probe {
             http_get {
               path = "/login"
               port = 8080
             }
-            initial_delay_seconds = 60
+            initial_delay_seconds = 120
             period_seconds = 30
+            timeout_seconds = 10
           }
           readiness_probe {
             http_get {
               path = "/login"
               port = 8080
             }
-            initial_delay_seconds = 30
+            initial_delay_seconds = 60
             period_seconds = 10
+            timeout_seconds = 5
           }
           resources {
             limits = {
@@ -73,6 +83,14 @@ resource "kubernetes_deployment" "jenkins" {
               memory = "512Mi"
             }
           }
+        }
+        volume {
+          name = "jenkins-home"
+          empty_dir {}
+        }
+        volume {
+          name = "tmp"
+          empty_dir {}
         }
         security_context {
           run_as_non_root = true
