@@ -13,39 +13,29 @@ pipeline {
             }
         }
 
-        stage('Tofu Init') {
-            steps {
-                dir("${TOFU_DIR}") {
-                    sh 'tofu init'
-                }
-            }
-        }
-
-        stage('Tofu Plan') {
-            steps {
-                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
-                    dir("${TOFU_DIR}") {
-                        sh 'tofu plan -var="kubeconfig_path=${KUBECONFIG_PATH}" -out=tfplan'
-                    }
-                }
-            }
-        }
-
         stage('Tofu Apply') {
             steps {
-                script {
-                    try {
-                        dir("${TOFU_DIR}") {
-                            // Store current state before applying
-                            sh 'tofu state pull > pre_apply_state.json || true'
+                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
+                    script {
+                        try {
+                            dir("${TOFU_DIR}") {
+                                // Initialize Tofu
+                                sh 'tofu init'
 
-                            // Apply changes
-                            sh 'tofu apply -auto-approve tfplan'
+                                // Validate the configuration
+                                sh 'tofu plan -var="kubeconfig_path=${KUBECONFIG_PATH}" -out=tfplan'
+
+                                // Store current state before applying
+                                sh 'tofu state pull > pre_apply_state.json || true'
+
+                                // Apply changes
+                                sh 'tofu apply -auto-approve tfplan'
+                            }
+                        } catch (Exception e) {
+                            echo "Apply failed: ${e.getMessage()}"
+                            currentBuild.result = 'FAILURE'
+                            error("Tofu apply failed, triggering rollback")
                         }
-                    } catch (Exception e) {
-                        echo "Apply failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error("Tofu apply failed, triggering rollback")
                     }
                 }
             }
