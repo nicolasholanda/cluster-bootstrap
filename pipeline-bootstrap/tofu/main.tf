@@ -12,7 +12,7 @@ resource "kubernetes_namespace" "apps" {
 
 resource "kubernetes_service_account" "jenkins" {
   metadata {
-    name      = "jenkins"
+    name      = "jenkins-robot"
     namespace = kubernetes_namespace.infra.metadata[0].name
   }
 }
@@ -67,19 +67,6 @@ resource "kubernetes_cluster_role_binding" "jenkins" {
     name      = kubernetes_service_account.jenkins.metadata[0].name
     namespace = kubernetes_service_account.jenkins.metadata[0].namespace
   }
-}
-
-resource "kubernetes_secret" "jenkins_kubeconfig" {
-  metadata {
-    name      = "jenkins-kubeconfig"
-    namespace = kubernetes_namespace.infra.metadata[0].name
-  }
-
-  data = {
-    "config" = file(var.kubeconfig_path)
-  }
-
-  type = "Opaque"
 }
 
 resource "kubernetes_deployment" "jenkins" {
@@ -150,18 +137,9 @@ resource "kubernetes_deployment" "jenkins" {
             mount_path = "/tmp"
           }
           volume_mount {
-            name       = "kubeconfig"
-            mount_path = "/var/jenkins_home/.kube"
-            read_only  = true
-          }
-          volume_mount {
             name       = "shared-tools"
             mount_path = "/usr/local/bin"
             read_only  = true
-          }
-          env {
-            name  = "KUBECONFIG"
-            value = "/var/jenkins_home/.kube/config"
           }
           env {
             name  = "PATH"
@@ -198,16 +176,16 @@ resource "kubernetes_deployment" "jenkins" {
         }
         volume {
           name = "jenkins-home"
-          empty_dir {}
+          host_path {
+            path = "/var/lib/jenkins-k8s/home"
+            type = "DirectoryOrCreate"
+          }
         }
         volume {
           name = "tmp"
-          empty_dir {}
-        }
-        volume {
-          name = "kubeconfig"
-          secret {
-            secret_name = kubernetes_secret.jenkins_kubeconfig.metadata[0].name
+          host_path {
+            path = "/var/lib/jenkins-k8s/tmp"
+            type = "DirectoryOrCreate"
           }
         }
         volume {

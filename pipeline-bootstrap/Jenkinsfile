@@ -16,7 +16,7 @@ pipeline {
                     sh '''
                         cd ${TOFU_DIR}
                         tofu init || true
-                        tofu apply -auto-approve -var="kubeconfig_path=$KUBECONFIG_PATH"
+                        tofu apply -auto-approve
                     '''
                 }
             }
