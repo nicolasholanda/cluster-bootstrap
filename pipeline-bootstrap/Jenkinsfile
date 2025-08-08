@@ -33,21 +33,19 @@ pipeline {
 
         stage('Tofu Apply') {
             steps {
-                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
-                    script {
-                        try {
-                            dir("${TOFU_DIR}") {
-                                // Store current state before applying
-                                sh 'tofu state pull > pre_apply_state.json || true'
+                script {
+                    try {
+                        dir("${TOFU_DIR}") {
+                            // Store current state before applying
+                            sh 'tofu state pull > pre_apply_state.json || true'
 
-                                // Apply changes
-                                sh 'tofu apply -var="kubeconfig_path=$KUBECONFIG_PATH" -auto-approve tfplan'
-                            }
-                        } catch (Exception e) {
-                            echo "Apply failed: ${e.getMessage()}"
-                            currentBuild.result = 'FAILURE'
-                            error("Tofu apply failed, triggering rollback")
+                            // Apply changes
+                            sh 'tofu apply -auto-approve tfplan'
                         }
+                    } catch (Exception e) {
+                        echo "Apply failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error("Tofu apply failed, triggering rollback")
                     }
                 }
             }
