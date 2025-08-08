@@ -25,6 +25,15 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
                     dir("${TOFU_DIR}") {
+                        sh '''
+                            echo "Kubeconfig file path: ${KUBECONFIG_PATH}"
+                            echo "Checking if kubeconfig file exists:"
+                            ls -la "${KUBECONFIG_PATH}"
+                            echo "Content of kubeconfig:"
+                            cat "${KUBECONFIG_PATH}"
+                            echo "Testing kubectl access:"
+                            kubectl --kubeconfig="${KUBECONFIG_PATH}" cluster-info
+                        '''
                         sh 'tofu plan -var="kubeconfig_path=${KUBECONFIG_PATH}" -out=tfplan'
                     }
                 }
