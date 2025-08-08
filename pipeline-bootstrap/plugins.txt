@@ -1,0 +1,8 @@
+workflow-aggregator:latest
+git:latest
+kubernetes:latest
+configuration-as-code:latest
+job-dsl:latest
+pipeline-stage-view:latest
+blueocean:latest
+
