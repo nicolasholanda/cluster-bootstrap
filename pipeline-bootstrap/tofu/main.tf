@@ -36,7 +36,7 @@ resource "kubernetes_deployment" "jenkins" {
           name  = "jenkins"
           image = "jenkins/jenkins@sha256:b1b1d3b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1d5b7e5a1"
           image_pull_policy = "Always"
-          ports {
+          port {
             container_port = 8080
           }
           security_context {
