@@ -1,37 +1,77 @@
 pipeline {
     agent any
+
     environment {
-        KUBECONFIG_CREDS_ID = 'jenkins-kubeconfig'
         TOFU_DIR = 'pipeline-bootstrap/tofu'
     }
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        stage('Bootstrap Cluster with Tofu') {
+
+        stage('Tofu Init') {
             steps {
-                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
-                    sh '''
-                        cd ${TOFU_DIR}
-                        tofu init || true
-                        tofu apply -auto-approve
-                    '''
+                dir("${TOFU_DIR}") {
+                    sh 'tofu init'
+                }
+            }
+        }
+
+        stage('Tofu Plan') {
+            steps {
+                dir("${TOFU_DIR}") {
+                    sh 'tofu plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Tofu Apply') {
+            steps {
+                script {
+                    try {
+                        dir("${TOFU_DIR}") {
+                            // Store current state before applying
+                            sh 'tofu state pull > pre_apply_state.json || true'
+
+                            // Apply changes
+                            sh 'tofu apply -auto-approve tfplan'
+
+                            echo "Tofu apply completed successfully"
+                        }
+                    } catch (Exception e) {
+                        echo "Apply failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error("Tofu apply failed, triggering rollback")
+                    }
                 }
             }
         }
     }
+
     post {
-        always {
-            echo "Bootstrap pipeline finished"
-        }
-        success {
-            echo "Cluster bootstrapped successfully"
-        }
         failure {
-            echo "Bootstrap failed. Check logs for details."
+            script {
+                echo "Pipeline failed, attempting rollback..."
+                dir("${TOFU_DIR}") {
+                    try {
+                        // Attempt to destroy what was created
+                        sh 'tofu destroy -auto-approve || true'
+                        echo "Rollback completed - all resources destroyed"
+                    } catch (Exception rollbackError) {
+                        echo "Rollback failed: ${rollbackError.getMessage()}"
+                        echo "Manual cleanup may be required"
+                    }
+                }
+            }
+        }
+        always {
+            dir("${TOFU_DIR}") {
+                // Clean up temporary files
+                sh 'rm -f tfplan pre_apply_state.json || true'
+            }
         }
     }
 }
-
