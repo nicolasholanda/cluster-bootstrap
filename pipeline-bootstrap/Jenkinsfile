@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         TOFU_DIR = 'pipeline-bootstrap/tofu'
+        KUBECONFIG_CREDS_ID = 'jenkins-kubeconfig'
     }
 
     stages {
@@ -22,29 +23,31 @@ pipeline {
 
         stage('Tofu Plan') {
             steps {
-                dir("${TOFU_DIR}") {
-                    sh 'tofu plan -out=tfplan'
+                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
+                    dir("${TOFU_DIR}") {
+                        sh 'tofu plan -var="kubeconfig_path=${KUBECONFIG_PATH}" -out=tfplan'
+                    }
                 }
             }
         }
 
         stage('Tofu Apply') {
             steps {
-                script {
-                    try {
-                        dir("${TOFU_DIR}") {
-                            // Store current state before applying
-                            sh 'tofu state pull > pre_apply_state.json || true'
+                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
+                    script {
+                        try {
+                            dir("${TOFU_DIR}") {
+                                // Store current state before applying
+                                sh 'tofu state pull > pre_apply_state.json || true'
 
-                            // Apply changes
-                            sh 'tofu apply -auto-approve tfplan'
-
-                            echo "Tofu apply completed successfully"
+                                // Apply changes
+                                sh 'tofu apply -auto-approve tfplan'
+                            }
+                        } catch (Exception e) {
+                            echo "Apply failed: ${e.getMessage()}"
+                            currentBuild.result = 'FAILURE'
+                            error("Tofu apply failed, triggering rollback")
                         }
-                    } catch (Exception e) {
-                        echo "Apply failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error("Tofu apply failed, triggering rollback")
                     }
                 }
             }
@@ -55,14 +58,16 @@ pipeline {
         failure {
             script {
                 echo "Pipeline failed, attempting rollback..."
-                dir("${TOFU_DIR}") {
-                    try {
-                        // Attempt to destroy what was created
-                        sh 'tofu destroy -auto-approve || true'
-                        echo "Rollback completed - all resources destroyed"
-                    } catch (Exception rollbackError) {
-                        echo "Rollback failed: ${rollbackError.getMessage()}"
-                        echo "Manual cleanup may be required"
+                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
+                    dir("${TOFU_DIR}") {
+                        try {
+                            // Attempt to destroy what was created
+                            sh 'tofu destroy -auto-approve -var="kubeconfig_path=${KUBECONFIG_PATH}" || true'
+                            echo "Rollback completed - all resources destroyed"
+                        } catch (Exception rollbackError) {
+                            echo "Rollback failed: ${rollbackError.getMessage()}"
+                            echo "Manual cleanup may be required"
+                        }
                     }
                 }
             }
