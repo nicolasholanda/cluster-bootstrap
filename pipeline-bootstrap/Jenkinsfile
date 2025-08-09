@@ -43,23 +43,23 @@ pipeline {
     }
 
     post {
-        failure {
-            script {
-                echo "Pipeline failed, attempting rollback..."
-                withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
-                    dir("${TOFU_DIR}") {
-                        try {
-                            // Attempt to destroy what was created
-                            sh 'tofu destroy -auto-approve -var="kubeconfig_path=${KUBECONFIG_PATH}" || true'
-                            echo "Rollback completed - all resources destroyed"
-                        } catch (Exception rollbackError) {
-                            echo "Rollback failed: ${rollbackError.getMessage()}"
-                            echo "Manual cleanup may be required"
-                        }
-                    }
-                }
-            }
-        }
+//         failure {
+//             script {
+//                 echo "Pipeline failed, attempting rollback..."
+//                 withCredentials([file(credentialsId: env.KUBECONFIG_CREDS_ID, variable: 'KUBECONFIG_PATH')]) {
+//                     dir("${TOFU_DIR}") {
+//                         try {
+//                             // Attempt to destroy what was created
+//                             sh 'tofu destroy -auto-approve -var="kubeconfig_path=${KUBECONFIG_PATH}" || true'
+//                             echo "Rollback completed - all resources destroyed"
+//                         } catch (Exception rollbackError) {
+//                             echo "Rollback failed: ${rollbackError.getMessage()}"
+//                             echo "Manual cleanup may be required"
+//                         }
+//                     }
+//                 }
+//             }
+//         }
         always {
             dir("${TOFU_DIR}") {
                 // Clean up temporary files
